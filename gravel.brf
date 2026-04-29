@@ -1,29 +1,36 @@
-# Os' Gravel Profile 1.12
+# Os' Gravel Profile 1.12.1
 # Based on  "quaelnix-gravel.brf -- Version 21.06.2025"
 # added consider_forest, consider_river
 
 ---context:global
-assign turnInstructionRoundabouts true # %turnInstructionRoundabouts% | Special turn-by-turn directions for roundabouts | boolean
-assign considerTurnRestrictions true
-assign turnInstructionMode 1 # %turnInstructionMode% | Mode for the generated turn-by-turn directions | [0=none, 1=auto-choose, 2=locus-style, 3=osmand-style, 4=comment-style, 5=gpsies-style, 6=oruxmaps-style]
-assign processUnusedTags true
-assign pass1coefficient 4
+
 assign validForBikes true
+
+assign consider_forest true # %consider_forest% | Enable to prefer forest/green routes | boolean
+assign consider_river true # %consider_river% | Enable to prefer river/scenic routes | boolean
+assign consider_traffic_estimate true # %consider_traffic_estimate% | Enable to consider traffic estimates | boolean
+assign prefer_cycle_routes false # %prefer_cycle_routes% | Enable to prefer cycle routes | boolean
+
+assign assume_wet_conditions false # %assume_wet_conditions% | Enable to assume wet conditions | boolean
+assign consider_elevation true # %consider_elevation% | Enable to consider elevation | boolean
+assign avoid_steep_inclines false # %avoid_steep_inclines% | Enable to avoid steep inclines | boolean
+assign prefer_paved_paths false # %prefer_paved_paths% | Enable to prefer paved paths | boolean
+assign prefer_unpaved_paths false # %prefer_unpaved_paths% | Enable to prefer unpaved paths | boolean
+
+
 # +++ Kinematic model parameters (travel time computation)
 assign totalMass = 90 # %totalMass% | Mass (kg) of the bike + biker | number
 assign maxSpeed = 35 # %maxSpeed% | Absolute maximum speed (km/h) | number
 assign S_C_x = 0.300 # %S_C_x% | Drag coefficient times reference area (m^2) times half air density (kg/m^3)
 assign C_r = 0.005 # %C_r% | Rolling resistance coefficient (dimensionless)
 assign bikerPower = 150 # %bikerPower% | Average power (W) provided by the biker | number
-assign consider_traffic_estimate true # %consider_traffic_estimate% | Enable to consider traffic estimates | boolean
-assign assume_wet_conditions false # %assume_wet_conditions% | Enable to assume wet conditions | boolean
-assign prefer_unpaved_paths false # %prefer_unpaved_paths% | Enable to prefer unpaved paths | boolean
-assign avoid_steep_inclines false # %avoid_steep_inclines% | Enable to avoid steep inclines | boolean
-assign prefer_paved_paths false # %prefer_paved_paths% | Enable to prefer paved paths | boolean
-assign prefer_cycle_routes false # %prefer_cycle_routes% | Enable to prefer cycle routes | boolean
-assign consider_elevation true # %consider_elevation% | Enable to consider elevation | boolean
-assign consider_forest true # %consider_forest% | Enable to prefer forest/green routes | boolean
-assign consider_river true # %consider_river% | Enable to prefer river/scenic routes | boolean
+
+assign turnInstructionRoundabouts true # %turnInstructionRoundabouts% | Special turn-by-turn directions for roundabouts | boolean
+assign considerTurnRestrictions true
+assign turnInstructionMode 4 # %turnInstructionMode% | Mode for the generated turn-by-turn directions | [0=none, 1=auto-choose, 2=locus-style, 3=osmand-style, 4=comment-style, 5=gpsies-style, 6=oruxmaps-style]
+assign processUnusedTags true
+assign pass1coefficient 4
+
 ---context:way
 assign downhillcost switch consider_elevation 40 switch avoid_steep_inclines 80 0.0
 assign downhillcutoff switch and not consider_elevation avoid_steep_inclines 8 1.5
@@ -280,3 +287,4 @@ assign initialcost
     switch not traffic_calming= 25
     switch highway=traffic_signals|crossing 20
                                                0
+
