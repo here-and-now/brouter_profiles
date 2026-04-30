@@ -6,6 +6,8 @@
 
 assign validForBikes true
 
+assign consider_town false # %consider_town% | Enable to avoid towns | boolean
+
 assign consider_forest true # %consider_forest% | Enable to prefer forest/green routes | boolean
 assign consider_river true # %consider_river% | Enable to prefer river/scenic routes | boolean
 assign consider_traffic_estimate true # %consider_traffic_estimate% | Enable to consider traffic estimates | boolean
@@ -195,12 +197,22 @@ assign no_river_penalty
         switch estimated_river_class=4 0.65
         switch estimated_river_class=5 0.50
         switch estimated_river_class=6 0.35 1 1
+assign no_town_penalty
+    switch consider_town
+        switch estimated_town_class= 1.0
+        switch estimated_town_class=1 1.5
+        switch estimated_town_class=2 2
+        switch estimated_town_class=3 2.5
+        switch estimated_town_class=4 3
+        switch estimated_town_class=5 5
+        switch estimated_town_class=6 6 1 1
 
 assign costfactor
     multiply notcycleroutepenalty multiply notcyclewaypenalty
     multiply switch consider_traffic_estimate trafficpenalty 1
     multiply no_forest_penalty
     multiply no_river_penalty
+    multiply no_town_penalty
     multiply switch and prefer_paved_paths not is_paved 12 1
     multiply onewaypenalty multiply smoothnesspenalty
     multiply hikingpenalty multiply mtbpenalty
