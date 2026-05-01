@@ -1,4 +1,4 @@
-# Os' Gravel Profile 1.12.2
+# Os' Gravel Profile 1.12.3
 # Based on  "quaelnix-gravel.brf -- Version 21.06.2025"
 # added consider_forest, consider_river
 
@@ -7,6 +7,7 @@
 assign validForBikes true
 
 assign consider_town false # %consider_town% | Enable to avoid towns | boolean
+assign consider_noise false # %consider_noise% | Enable to avoid noises | boolean
 
 assign consider_forest true # %consider_forest% | Enable to prefer forest/green routes | boolean
 assign consider_river true # %consider_river% | Enable to prefer river/scenic routes | boolean
@@ -207,12 +208,25 @@ assign no_town_penalty
         switch estimated_town_class=5 5
         switch estimated_town_class=6 6 1 1
 
+assign no_noise_penalty
+    switch consider_noise
+        switch estimated_noise_class= 1.0
+        switch estimated_noise_class=1 1.5
+        switch estimated_noise_class=2 2
+        switch estimated_noise_class=3 2.5
+        switch estimated_noise_class=4 3
+        switch estimated_noise_class=5 5
+        switch estimated_noise_class=6 6 1 1
+
+    
+
 assign costfactor
     multiply notcycleroutepenalty multiply notcyclewaypenalty
     multiply switch consider_traffic_estimate trafficpenalty 1
     multiply no_forest_penalty
     multiply no_river_penalty
     multiply no_town_penalty
+    multiply no_noise_penalty
     multiply switch and prefer_paved_paths not is_paved 12 1
     multiply onewaypenalty multiply smoothnesspenalty
     multiply hikingpenalty multiply mtbpenalty
@@ -299,4 +313,5 @@ assign initialcost
     switch not traffic_calming= 25
     switch highway=traffic_signals|crossing 20
                                                0
+
 
