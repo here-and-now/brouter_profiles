@@ -1,46 +1,52 @@
-# Os' Gravel Profile 1.14
-# Based on  "quaelnix-gravel.brf -- Version 21.06.2025"
+# Os' Gravel Profile 1.15 (Interactive Select Edition)
+# Based on "quaelnix-gravel.brf"
+# Optimized UI for Locus, BRouter-Web, and OsmAnd via Select Dropdowns
 
 ---context:global
-
 assign validForBikes true
 
-assign consider_town false # %consider_town% | Enable to avoid towns | boolean
-assign consider_noise false # %consider_noise% | Enable to avoid noises | boolean
+# --- 1. ROUTING PREFERENCES (Dropdowns) ---
+assign surface_pref = 0 # %surface_pref% | Surface Preference | [0=Mixed Gravel (Default), 1=Prefer Paved, 2=Prefer Unpaved]
+assign cycle_routes = 1 # %cycle_routes% | Cycle Route Network | [0=Ignore, 1=Prefer (Default), 2=Prefer + Local Networks]
+assign elevation_strategy = 1 # %elevation_strategy% | Elevation Handling | [0=Ignore, 1=Avoid Hills (Default), 2=Avoid Hills & Steep Inclines]
 
-assign consider_forest true # %consider_forest% | Enable to prefer forest/green routes | boolean
-assign consider_river false # %consider_river% | Enable to prefer river/scenic routes | boolean
-assign consider_traffic_estimate true # %consider_traffic_estimate% | Enable to consider traffic estimates | boolean
-assign prefer_cycle_routes true # %prefer_cycle_routes% | Enable to prefer cycle routes | boolean
-assign include_lcn = false   # %include_lcn% | Include local cycle networks (route_bicycle_lcn=yes) | boolean
+# --- 2. ENVIRONMENT & AVOIDANCES (Dropdowns) ---
+assign env_forest = 2 # %env_forest% | Forest Preference | [0=Neutral, 1=Slightly Prefer, 2=Strongly Prefer (Original)]
+assign env_river = 0 # %env_river% | River Preference | [0=Neutral, 1=Slightly Prefer, 2=Strongly Prefer]
+assign avoid_traffic = 1 # %avoid_traffic% | Traffic Avoidance | [0=Neutral, 1=Avoid (Default), 2=Strongly Avoid]
+assign avoid_towns = 2 # %avoid_towns% | Town Avoidance | [0=Neutral, 1=Avoid, 2=Strongly Avoid]
+assign avoid_noise = 2 # %avoid_noise% | Noise Avoidance | [0=Neutral, 1=Avoid, 2=Strongly Avoid]
 
-assign assume_wet_conditions false # %assume_wet_conditions% | Enable to assume wet conditions | boolean
-assign consider_elevation true # %consider_elevation% | Enable to consider elevation | boolean
-assign avoid_steep_inclines false # %avoid_steep_inclines% | Enable to avoid steep inclines | boolean
-assign prefer_paved_paths false # %prefer_paved_paths% | Enable to prefer paved paths | boolean
-assign prefer_unpaved_paths false # %prefer_unpaved_paths% | Enable to prefer unpaved paths | boolean
+# --- 3. TOGGLES & PHYSICS ---
+assign assume_wet_conditions false # %assume_wet_conditions% | Assume wet/muddy conditions | boolean
+assign bike_type = 1 # %bike_type% | Bike Aerodynamics & Tires | [0=Gravel/Touring (Default), 1=Road/Aero, 2=MTB/Knobby]
+assign totalMass = 90 # %totalMass% | Mass (kg) of bike + biker | number
+assign maxSpeed = 35 # %maxSpeed% | Absolute max speed (km/h) | number
+assign bikerPower = 150 # %bikerPower% | Average power (W) by biker | number
 
+# +++ INTERNAL MAPPING (Translating UI integers to variables) +++
 
+# Map Aero/Tires based on bike_type (Solves the decimal slider issue)
+assign S_C_x = switch equal bike_type 1 0.28 switch equal bike_type 2 0.45 0.36
+assign C_r = switch equal bike_type 1 0.004 switch equal bike_type 2 0.015 0.009
 
+# Map Surface & Route Logic
+assign prefer_paved_paths = equal surface_pref 1
+assign prefer_unpaved_paths = equal surface_pref 2
+assign prefer_cycle_routes = greater cycle_routes 0
+assign include_lcn = equal cycle_routes 2
 
-# +++ Kinematic model parameters (travel time computation)
-assign totalMass = 90 # %totalMass% | Mass (kg) of the bike + biker | number
-assign maxSpeed = 35 # %maxSpeed% | Absolute maximum speed (km/h) | number
-assign S_C_x = 0.36 # %S_C_x% | Drag coefficient times reference area (m^2) times half air density (kg/m^3)
-assign C_r = 0.009 # %C_r% | Rolling resistance coefficient (dimensionless)
-assign bikerPower = 150 # %bikerPower% | Average power (W) provided by the biker | number
+# Map Elevation Logic
+assign consider_elevation = greater elevation_strategy 0
+assign avoid_steep_inclines = equal elevation_strategy 2
 
+# Turn instructions & core engine variables
 assign turnInstructionRoundabouts true
 assign considerTurnRestrictions true
-assign turnInstructionMode 4 
+assign turnInstructionMode 4
 assign processUnusedTags true
-
-# Pass 1: Fast A* with heuristic (upper bound)
-# Pass 2: Exact Dijkstra using that bound → guarantees optimal route
-assign pass1coefficient 1.5     # 1.0-1.5 = normal (higher = faster)
-assign pass2coefficient 0       # 0 = exact Dijkstra (best route)
-
-
+assign pass1coefficient 1.5
+assign pass2coefficient 0
 
 ---context:way
 assign downhillcost switch consider_elevation 40 switch avoid_steep_inclines 80 0.0
@@ -53,15 +59,15 @@ assign downhillcost switch bad_when_steep ( max 160 downhillcost ) downhillcost
 assign downhillcutoff switch bad_when_steep ( min 1.5 downhillcutoff ) downhillcutoff
 assign uphillcost switch bad_when_steep ( max 80 uphillcost ) uphillcost
 assign uphillcutoff switch bad_when_steep ( min 1.5 uphillcutoff ) uphillcutoff
+
 assign any_cycleway or cycleway=track|lane|shared_lane|shared
                     or and cycleway:right=track|lane|shared_lane reversedirection=
                        and cycleway:left=track|lane|shared_lane reversedirection=yes
-                  
-
-assign any_cycleroute 
-    or route_bicycle_icn=yes 
-    or route_bicycle_ncn=yes 
-    or route_bicycle_rcn=yes 
+                 
+assign any_cycleroute
+    or route_bicycle_icn=yes
+    or route_bicycle_ncn=yes
+    or route_bicycle_rcn=yes
     switch include_lcn route_bicycle_lcn=yes 0
 
 assign turncost switch junction=roundabout 15 65
@@ -70,14 +76,17 @@ assign initialclassifier switch route=ferry 4 switch is_main_road 3 switch footw
 assign initialcost switch route=ferry 10000 switch is_main_road 320 switch assume_wet_conditions 100 20
 assign nobikeaccess switch bicycle= switch vehicle= access=no|private vehicle=no|private bicycle=no|private|dismount
 assign nofootaccess switch foot= ( and access=no|private ( not bicycle=dismount ) ) foot=no|private
+
 assign badoneway
     switch not reversedirection=yes oneway=-1
         switch oneway=yes|reversible not oneway:bicycle=no
                                         or junction=roundabout oneway:bicycle=yes
+
 assign onewaypenalty
     switch or ( not badoneway ) ( or cycleway=opposite|opposite_lane|opposite_track oneway:bicycle=no ) 1
     switch not junction=roundabout 5
                                                                                                         20
+
 assign smoothnesspenalty
     switch smoothness=excellent switch not assume_wet_conditions 1.0 1.0
     switch smoothness=good switch not assume_wet_conditions 1.1 1.2
@@ -96,7 +105,7 @@ assign smoothnesspenalty
             switch cycleway:surface=gravel switch not assume_wet_conditions 1.5 1.5
             switch cycleway:surface=unpaved switch not assume_wet_conditions 1.6 2.0
             switch cycleway:surface=cobblestone|sett switch not assume_wet_conditions 1.7 2.4
-                                                                switch not assume_wet_conditions 1.6 1.8
+                                                        switch not assume_wet_conditions 1.6 1.8
         switch surface=asphalt switch not assume_wet_conditions 1.1 1.1
         switch concrete=plates|lanes switch not assume_wet_conditions 1.2 1.2
         switch surface=fine_gravel|compacted switch not assume_wet_conditions 1.2 1.2
@@ -124,16 +133,19 @@ assign smoothnesspenalty
         switch surface=ground|grass|dirt|earth|mud|clay|sand switch not assume_wet_conditions 2.6 4.0
         # default smoothness
                                         switch not assume_wet_conditions 1.6 3.2
+
 assign footwaypenalty
     switch bicycle=yes|designated
         switch segregated=yes 1.8
                                    2.6
     switch not footway=sidewalk 3.2
                                    4.9
+
 assign cyclewaypenalty
     switch not foot=yes|designated 1.0
         switch segregated=yes 1.2
                                    2.4
+
 assign pathpenalty
     switch bicycle=yes|designated
         switch not foot=yes|designated 1.1
@@ -144,12 +156,14 @@ assign pathpenalty
     switch lesser smoothnesspenalty 1.6 1.1
     switch not and surface= smoothness= 3.0
                                           4.9
+
 assign stepspenalty
     switch ramp:stroller=yes 30
     switch ramp:bicycle=yes 65
     switch surface=paving_stones 80
     switch not assume_wet_conditions 400
                                      600
+
 assign tracktypepenalty
     switch tracktype=grade1 switch not prefer_unpaved_paths 1.0 1.1
     switch tracktype=grade2 switch not prefer_unpaved_paths 1.1 1.0
@@ -158,6 +172,7 @@ assign tracktypepenalty
     switch tracktype=grade5 switch not assume_wet_conditions 1.8 5.0
     switch highway=track switch not assume_wet_conditions 1.3 3.5
                                1.0
+
 assign is_paved
     and not surface=ground|grass|dirt|earth|mud|clay|sand|pebblestone|gravel|fine_gravel|compacted
     or highway=primary|primary_link|secondary|secondary_link|tertiary|tertiary_link
@@ -165,26 +180,17 @@ assign is_paved
     or highway=road|unclassified|residential|living_street|service
     or smoothness=excellent|good
        tracktype=grade1
-assign initialcost
-multiply initialcost ( switch and prefer_unpaved_paths is_paved 2 1 )
-  
-assign smoothnesspenalty
-    multiply smoothnesspenalty ( switch and prefer_unpaved_paths is_paved 2 1 )
-assign smoothnesspenalty
-    max 1 multiply smoothnesspenalty ( switch and prefer_unpaved_paths ( lesser smoothnesspenalty 1.6 ) 0.84 1 )
-assign hikingpenalty
-    if sac_scale= then 1.0 else if sac_scale=hiking then 2.5 else 10000
-assign mtbpenalty
-    if mtb:scale= then 1.0 else if mtb:scale=0- then 1.2 else
-    if mtb:scale=0 then 1.5 else if mtb:scale=0+ then 3.0 else 9.0
+
+assign initialcost multiply initialcost ( switch and prefer_unpaved_paths is_paved 2 1 )
+assign smoothnesspenalty multiply smoothnesspenalty ( switch and prefer_unpaved_paths is_paved 2 1 )
+assign smoothnesspenalty max 1 multiply smoothnesspenalty ( switch and prefer_unpaved_paths ( lesser smoothnesspenalty 1.6 ) 0.84 1 )
+
+assign hikingpenalty if sac_scale= then 1.0 else if sac_scale=hiking then 2.5 else 10000
+assign mtbpenalty if mtb:scale= then 1.0 else if mtb:scale=0- then 1.2 else if mtb:scale=0 then 1.5 else if mtb:scale=0+ then 3.0 else 9.0
+
 assign notcycleroutepenalty switch any_cycleroute 1.0 switch not prefer_cycle_routes 1.03 1.85
 assign notcyclewaypenalty switch bicycle_road=yes 1.0 switch any_cycleway 1.02 1.06
-assign trafficpenalty
-    switch estimated_traffic_class=1|2 1.1
-    switch estimated_traffic_class=3 1.3
-    switch estimated_traffic_class=4 2.0
-    switch estimated_traffic_class=5 2.5
-    switch estimated_traffic_class=6|7 3.0 1
+
 assign maxspeedpenalty
     switch maxspeed=50 1.0
     switch maxspeed=60 1.1
@@ -193,50 +199,65 @@ assign maxspeedpenalty
     switch maxspeed=90 1.6
     switch maxspeed=100 1.8 switch highway=primary|secondary 1.8 1.0
 
-# --- Forest & River preference (tuned milder to avoid "no route" issues) ---
+# --- Integer Select Mappings for Environment Penalties ---
+
+assign trafficpenalty_base
+    switch estimated_traffic_class=1|2 1.1
+    switch estimated_traffic_class=3 1.3
+    switch estimated_traffic_class=4 2.0
+    switch estimated_traffic_class=5 2.5
+    switch estimated_traffic_class=6|7 3.0 1
+
+assign actual_traffic_penalty
+    switch equal avoid_traffic 0 1.0
+    switch equal avoid_traffic 1 trafficpenalty_base
+    multiply trafficpenalty_base 1.5 # Strongly Avoid
+
+assign forest_factor_mod
+    switch estimated_forest_class= 1.0 switch estimated_forest_class=1 0.9 switch estimated_forest_class=2 0.8 switch estimated_forest_class=3 0.7 switch estimated_forest_class=4 0.6 switch estimated_forest_class=5 0.5 switch estimated_forest_class=6 0.4 1
+assign forest_factor_strong
+    switch estimated_forest_class= 1.0 switch estimated_forest_class=1 0.85 switch estimated_forest_class=2 0.70 switch estimated_forest_class=3 0.55 switch estimated_forest_class=4 0.45 switch estimated_forest_class=5 0.35 switch estimated_forest_class=6 0.25 1
+
 assign no_forest_penalty
-    switch consider_forest
-        switch estimated_forest_class= 1.0
-        switch estimated_forest_class=1 0.85
-        switch estimated_forest_class=2 0.70
-        switch estimated_forest_class=3 0.55
-        switch estimated_forest_class=4 0.45
-        switch estimated_forest_class=5 0.35
-        switch estimated_forest_class=6 0.25 1 1
+    switch equal env_forest 0 1.0
+    switch equal env_forest 1 forest_factor_mod
+    forest_factor_strong
+
+assign river_factor_mod
+    switch estimated_river_class= 1.0 switch estimated_river_class=1 1.05 switch estimated_river_class=2 1.0 switch estimated_river_class=3 0.95 switch estimated_river_class=4 0.85 switch estimated_river_class=5 0.75 switch estimated_river_class=6 0.65 1
+assign river_factor_strong
+    switch estimated_river_class= 1.0 switch estimated_river_class=1 1.15 switch estimated_river_class=2 1.0 switch estimated_river_class=3 0.85 switch estimated_river_class=4 0.65 switch estimated_river_class=5 0.50 switch estimated_river_class=6 0.35 1
+
 assign no_river_penalty
-    switch consider_river
-        switch estimated_river_class= 1.0
-        switch estimated_river_class=1 1.15
-        switch estimated_river_class=2 1.0
-        switch estimated_river_class=3 0.85
-        switch estimated_river_class=4 0.65
-        switch estimated_river_class=5 0.50
-        switch estimated_river_class=6 0.35 1 1
+    switch equal env_river 0 1.0
+    switch equal env_river 1 river_factor_mod
+    river_factor_strong
+
+assign town_factor_mod
+    switch estimated_town_class= 1.0 switch estimated_town_class=1 1.2 switch estimated_town_class=2 1.5 switch estimated_town_class=3 1.8 switch estimated_town_class=4 2.2 switch estimated_town_class=5 3.0 switch estimated_town_class=6 3.5 1
+assign town_factor_strong
+    switch estimated_town_class= 1.0 switch estimated_town_class=1 1.5 switch estimated_town_class=2 2.0 switch estimated_town_class=3 2.5 switch estimated_town_class=4 3.0 switch estimated_town_class=5 5.0 switch estimated_town_class=6 6.0 1
+
 assign no_town_penalty
-    switch consider_town
-        switch estimated_town_class= 1.0
-        switch estimated_town_class=1 1.5
-        switch estimated_town_class=2 2
-        switch estimated_town_class=3 2.5
-        switch estimated_town_class=4 3
-        switch estimated_town_class=5 5
-        switch estimated_town_class=6 6 1 1
+    switch equal avoid_towns 0 1.0
+    switch equal avoid_towns 1 town_factor_mod
+    town_factor_strong
+
+assign noise_factor_mod
+    switch estimated_noise_class= 1.0 switch estimated_noise_class=1 1.2 switch estimated_noise_class=2 1.5 switch estimated_noise_class=3 1.8 switch estimated_noise_class=4 2.2 switch estimated_noise_class=5 3.0 switch estimated_noise_class=6 3.5 1
+assign noise_factor_strong
+    switch estimated_noise_class= 1.0 switch estimated_noise_class=1 1.5 switch estimated_noise_class=2 2.0 switch estimated_noise_class=3 2.5 switch estimated_noise_class=4 3.0 switch estimated_noise_class=5 5.0 switch estimated_noise_class=6 6.0 1
 
 assign no_noise_penalty
-    switch consider_noise
-        switch estimated_noise_class= 1.0
-        switch estimated_noise_class=1 1.5
-        switch estimated_noise_class=2 2
-        switch estimated_noise_class=3 2.5
-        switch estimated_noise_class=4 3
-        switch estimated_noise_class=5 5
-        switch estimated_noise_class=6 6 1 1
+    switch equal avoid_noise 0 1.0
+    switch equal avoid_noise 1 noise_factor_mod
+    noise_factor_strong
 
-    
+# --- Costfactor Calculation ---
 
 assign costfactor
     multiply notcycleroutepenalty multiply notcyclewaypenalty
-    multiply switch consider_traffic_estimate trafficpenalty 1
+    multiply actual_traffic_penalty
     multiply no_forest_penalty
     multiply no_river_penalty
     multiply no_town_penalty
@@ -269,7 +290,8 @@ assign costfactor
     switch highway=steps stepspenalty
     switch highway=footway footwaypenalty
     switch highway=cycleway cyclewaypenalty
-                                                                10000
+                                                        10000
+
 # way priorities used for voice hint generation
 assign priorityclassifier =
   if ( highway=motorway ) then 30
@@ -292,23 +314,19 @@ assign priorityclassifier =
   else if ( highway=steps ) then 2
   else if ( highway=pedestrian ) then 2
   else 0
-# some more classifying bits used for voice hint generation...
+
 assign isbadoneway = not equal onewaypenalty 0
-assign isgoodoneway = if reversedirection=yes then oneway=-1
-                      else if oneway= then junction=roundabout else oneway=yes|true|1
+assign isgoodoneway = if reversedirection=yes then oneway=-1 else if oneway= then junction=roundabout else oneway=yes|true|1
 assign isroundabout = junction=roundabout
 assign islinktype = highway=motorway_link|trunk_link|primary_link|secondary_link|tertiary_link
-assign isgoodforcars = if greater priorityclassifier 6 then true
-                  else if highway=residential|living_street|service then true
-                  else if ( and highway=track tracktype=grade1 ) then true
-                  else false
-# ... encoded into a bitmask
+assign isgoodforcars = if greater priorityclassifier 6 then true else if highway=residential|living_street|service then true else if ( and highway=track tracktype=grade1 ) then true else false
+
 assign classifiermask
-# add isbadoneway # no voice hint if 1 of the 2 possibilities is badoneway
                       add multiply isgoodoneway 2
                       add multiply isroundabout 4
                       add multiply islinktype 8
                           multiply isgoodforcars 16
+
 ---context:node
 assign nobikeaccess switch bicycle= switch vehicle= access=no|private vehicle=no|private bicycle=no|private|dismount
 assign nofootaccess switch foot= ( and access=no|private ( not bicycle=dismount ) ) foot=no|private
@@ -318,6 +336,7 @@ assign barrierpenalty
     switch barrier=gate|swing_gate 50
     switch barrier=cycle_barrier 87
                                    139
+
 assign initialcost
     add barrierpenalty
     switch and nobikeaccess nofootaccess 1000000
@@ -327,5 +346,3 @@ assign initialcost
     switch not traffic_calming= 25
     switch highway=traffic_signals|crossing 20
                                                0
-
-
