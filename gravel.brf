@@ -1,10 +1,7 @@
-# Os' Gravel Profile 1.13
+# Os' Gravel Profile 1.14
 # Based on  "quaelnix-gravel.brf -- Version 21.06.2025"
-# added consider_forest, consider_river
 
 ---context:global
-
-
 
 assign validForBikes true
 
@@ -12,15 +9,18 @@ assign consider_town false # %consider_town% | Enable to avoid towns | boolean
 assign consider_noise false # %consider_noise% | Enable to avoid noises | boolean
 
 assign consider_forest true # %consider_forest% | Enable to prefer forest/green routes | boolean
-assign consider_river true # %consider_river% | Enable to prefer river/scenic routes | boolean
+assign consider_river false # %consider_river% | Enable to prefer river/scenic routes | boolean
 assign consider_traffic_estimate true # %consider_traffic_estimate% | Enable to consider traffic estimates | boolean
-assign prefer_cycle_routes false # %prefer_cycle_routes% | Enable to prefer cycle routes | boolean
+assign prefer_cycle_routes true # %prefer_cycle_routes% | Enable to prefer cycle routes | boolean
+assign include_lcn = false   # %include_lcn% | Include local cycle networks (route_bicycle_lcn=yes) | boolean
 
 assign assume_wet_conditions false # %assume_wet_conditions% | Enable to assume wet conditions | boolean
 assign consider_elevation true # %consider_elevation% | Enable to consider elevation | boolean
 assign avoid_steep_inclines false # %avoid_steep_inclines% | Enable to avoid steep inclines | boolean
 assign prefer_paved_paths false # %prefer_paved_paths% | Enable to prefer paved paths | boolean
 assign prefer_unpaved_paths false # %prefer_unpaved_paths% | Enable to prefer unpaved paths | boolean
+
+
 
 
 # +++ Kinematic model parameters (travel time computation)
@@ -30,9 +30,9 @@ assign S_C_x = 0.36 # %S_C_x% | Drag coefficient times reference area (m^2) time
 assign C_r = 0.009 # %C_r% | Rolling resistance coefficient (dimensionless)
 assign bikerPower = 150 # %bikerPower% | Average power (W) provided by the biker | number
 
-assign turnInstructionRoundabouts true # %turnInstructionRoundabouts% | Special turn-by-turn directions for roundabouts | boolean
+assign turnInstructionRoundabouts true
 assign considerTurnRestrictions true
-assign turnInstructionMode 4 # %turnInstructionMode% | Mode for the generated turn-by-turn directions | [0=none, 1=auto-choose, 2=locus-style, 3=osmand-style, 4=comment-style, 5=gpsies-style, 6=oruxmaps-style]
+assign turnInstructionMode 4 
 assign processUnusedTags true
 
 # Pass 1: Fast A* with heuristic (upper bound)
@@ -57,7 +57,13 @@ assign any_cycleway or cycleway=track|lane|shared_lane|shared
                     or and cycleway:right=track|lane|shared_lane reversedirection=
                        and cycleway:left=track|lane|shared_lane reversedirection=yes
                   
-assign any_cycleroute or route_bicycle_icn=yes or route_bicycle_ncn=yes or route_bicycle_rcn=yes route_bicycle_lcn=yes
+
+assign any_cycleroute 
+    or route_bicycle_icn=yes 
+    or route_bicycle_ncn=yes 
+    or route_bicycle_rcn=yes 
+    switch include_lcn route_bicycle_lcn=yes 0
+
 assign turncost switch junction=roundabout 15 65
 assign is_main_road highway=primary|primary_link|secondary|secondary_link|tertiary|tertiary_link
 assign initialclassifier switch route=ferry 4 switch is_main_road 3 switch footway=crossing 2 1
