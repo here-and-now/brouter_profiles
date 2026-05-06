@@ -1,8 +1,10 @@
-# Os' Gravel Profile 1.12.4
+# Os' Gravel Profile 1.13
 # Based on  "quaelnix-gravel.brf -- Version 21.06.2025"
 # added consider_forest, consider_river
 
 ---context:global
+
+
 
 assign validForBikes true
 
@@ -32,7 +34,13 @@ assign turnInstructionRoundabouts true # %turnInstructionRoundabouts% | Special 
 assign considerTurnRestrictions true
 assign turnInstructionMode 4 # %turnInstructionMode% | Mode for the generated turn-by-turn directions | [0=none, 1=auto-choose, 2=locus-style, 3=osmand-style, 4=comment-style, 5=gpsies-style, 6=oruxmaps-style]
 assign processUnusedTags true
-assign pass1coefficient 4
+
+# Pass 1: Fast A* with heuristic (upper bound)
+# Pass 2: Exact Dijkstra using that bound → guarantees optimal route
+assign pass1coefficient 1.5     # 1.0-1.5 = normal (higher = faster)
+assign pass2coefficient 0       # 0 = exact Dijkstra (best route)
+
+
 
 ---context:way
 assign downhillcost switch consider_elevation 40 switch avoid_steep_inclines 80 0.0
