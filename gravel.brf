@@ -21,6 +21,8 @@ assign assume_wet_conditions false # %assume_wet_conditions% | Assume wet/muddy 
 assign totalMass = 90 # %totalMass% | Mass (kg) of bike + biker | number
 assign maxSpeed = 35 # %maxSpeed% | Absolute max speed (km/h) | number
 assign bikerPower = 150 # %bikerPower% | Average power (W) by biker | number
+assign S_C_x = 0.36 # %S_C_x% | Drag coefficient times reference area (m^2) times half air density (kg/m^3)
+assign C_r = 0.009 # %C_r% | Rolling resistance coefficient (dimensionless)
 
 # Map Surface & Route Logic
 assign prefer_paved_paths = equal surface_pref 1
