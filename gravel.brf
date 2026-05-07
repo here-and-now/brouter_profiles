@@ -1,33 +1,26 @@
-# Os' Gravel Profile 1.16 (Interactive Select Edition)
+# Os' Gravel Profile 1.17 (Interactive Select Edition)
 # Based on "quaelnix-gravel.brf"
 
 ---context:global
 assign validForBikes true
 
 # --- 1. ROUTING PREFERENCES (Dropdowns) ---
-assign surface_pref = 0 # %surface_pref% | Surface Preference | [0=Mixed Gravel (Default), 1=Prefer Paved, 2=Prefer Unpaved]
-assign cycle_routes = 1 # %cycle_routes% | Cycle Route Network | [0=Ignore, 1=Prefer (Default), 2=Prefer + Local Networks]
-assign elevation_strategy = 1 # %elevation_strategy% | Elevation Handling | [0=Ignore, 1=Avoid Hills (Default), 2=Avoid Hills & Steep Inclines]
+assign surface_pref = 0 # %surface_pref% | Surface Preference | [0=Mixed Gravel, 1=Prefer Paved, 2=Prefer Unpaved]
+assign cycle_routes = 1 # %cycle_routes% | Cycle Route Network | [0=Ignore, 1=Prefer, 2=Prefer + Local Networks]
+assign elevation_strategy = 1 # %elevation_strategy% | Elevation Handling | [0=Ignore, 1=Avoid Hills, 2=Avoid Hills & Steep Inclines]
 
 # --- 2. ENVIRONMENT & AVOIDANCES (Dropdowns) ---
-assign env_forest = 2 # %env_forest% | Forest Preference | [0=Neutral, 1=Slightly Prefer, 2=Strongly Prefer (Original)]
+assign env_forest = 2 # %env_forest% | Forest Preference | [0=Neutral, 1=Slightly Prefer, 2=Strongly Prefer]
 assign env_river = 0 # %env_river% | River Preference | [0=Neutral, 1=Slightly Prefer, 2=Strongly Prefer]
-assign avoid_traffic = 1 # %avoid_traffic% | Traffic Avoidance | [0=Neutral, 1=Avoid (Default), 2=Strongly Avoid]
+assign avoid_traffic = 1 # %avoid_traffic% | Traffic Avoidance | [0=Neutral, 1=Avoid, 2=Strongly Avoid]
 assign avoid_towns = 2 # %avoid_towns% | Town Avoidance | [0=Neutral, 1=Avoid, 2=Strongly Avoid]
 assign avoid_noise = 2 # %avoid_noise% | Noise Avoidance | [0=Neutral, 1=Avoid, 2=Strongly Avoid]
 
 # --- 3. TOGGLES & PHYSICS ---
 assign assume_wet_conditions false # %assume_wet_conditions% | Assume wet/muddy conditions | boolean
-assign bike_type = 1 # %bike_type% | Bike Aerodynamics & Tires | [0=Gravel/Touring (Default), 1=Road/Aero, 2=MTB/Knobby]
 assign totalMass = 90 # %totalMass% | Mass (kg) of bike + biker | number
 assign maxSpeed = 35 # %maxSpeed% | Absolute max speed (km/h) | number
 assign bikerPower = 150 # %bikerPower% | Average power (W) by biker | number
-
-# +++ INTERNAL MAPPING (Translating UI integers to variables) +++
-
-# Map Aero/Tires based on bike_type (Solves the decimal slider issue)
-assign S_C_x = switch equal bike_type 1 0.28 switch equal bike_type 2 0.45 0.36
-assign C_r = switch equal bike_type 1 0.004 switch equal bike_type 2 0.015 0.009
 
 # Map Surface & Route Logic
 assign prefer_paved_paths = equal surface_pref 1
