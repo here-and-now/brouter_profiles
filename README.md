@@ -68,3 +68,14 @@ Use the main command at the top of this file — it mounts your modified `lookup
 - `--network=none` solved the pasta/tun error
 - Volume mount of custom `lookups.dat` successfully includes new tags (e.g. `tourism=viewpoint`)
 
+### 3. SRTM HGT to BEF
+
+podman run --rm \
+  --name brouter-convert \
+  -v ~/maps/brouter/srtm1_hgt:/hgt:ro \
+  -v ~/maps/brouter/srtm1_bef:/bef \
+  --entrypoint java \
+  brouter-builder \
+  -cp /brouter/brouter.jar \
+  btools.mapcreator.ElevationRasterTileConverter \
+  all /hgt /bef 1
