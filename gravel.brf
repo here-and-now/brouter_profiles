@@ -1,7 +1,8 @@
 # ============================================================
-# Os' Gravel Profile 1.20
+# Os' Gravel Profile 1.21
 # Based on "quaelnix-gravel.brf"
-# Updates: Rebuilt Surface Preference & Wet Weather Engine
+# Updates: Rebuilt Surface Preference, Wet Weather Engine, &
+# Non-Compounding Penalty/Reward Architecture
 # ============================================================
 
 ---context:global
@@ -121,7 +122,7 @@ assign onewaypenalty
     20
 
 # ============================================================
-# SURFACE & WET CONDITIONS ENGINE (NEW)
+# SURFACE & WET CONDITIONS ENGINE
 # ============================================================
 assign is_paved
     and not surface=ground|grass|dirt|earth|mud|clay|sand|pebblestone|gravel|fine_gravel|compacted
@@ -176,18 +177,15 @@ assign wet_surface_multiplier
     1.0
 
 # ============================================================
-# PREFERENCE ENGINE (NON-COMPOUNDING)
+# RAW PENALTY VARIABLES
 # ============================================================
 assign surface_preference_multiplier
     switch prefer_paved_paths
-        switch is_paved 1.0 4.0      # 4x penalty for unpaved if paved preferred
+        switch is_paved 1.0 4.0      
     switch prefer_unpaved_paths
-        switch is_paved 3.0 0.85     # 3x penalty for paved, slight reward for gravel
-    1.0                              # Default (Mixed Gravel = 0)
+        switch is_paved 3.0 0.85     
+    1.0                              
 
-# ============================================================
-# PATH & HIGHWAY PENALTIES
-# ============================================================
 assign footwaypenalty
     switch bicycle=yes|designated
         switch segregated=yes 1.8 2.6
@@ -235,7 +233,7 @@ assign maxspeedpenalty
     switch maxspeed=100 1.8 switch highway=primary|secondary 1.8 1.0
 
 # ------------------------------------------------------------
-# Environment Penalties
+# Raw Environment Penalties & Rewards
 # ------------------------------------------------------------
 assign trafficpenalty_base
     switch estimated_traffic_class=1|2 1.1
@@ -248,36 +246,6 @@ assign actual_traffic_penalty
     switch equal avoid_traffic 0 1.0
     switch equal avoid_traffic 1 trafficpenalty_base
     multiply trafficpenalty_base 1.5
-
-assign forest_factor_mod
-    switch estimated_forest_class= 1.0 switch estimated_forest_class=1 0.9 switch estimated_forest_class=2 0.8
-    switch estimated_forest_class=3 0.7 switch estimated_forest_class=4 0.6 switch estimated_forest_class=5 0.5
-    switch estimated_forest_class=6 0.4 1
-
-assign forest_factor_strong
-    switch estimated_forest_class= 1.0 switch estimated_forest_class=1 0.85 switch estimated_forest_class=2 0.70
-    switch estimated_forest_class=3 0.55 switch estimated_forest_class=4 0.45 switch estimated_forest_class=5 0.35
-    switch estimated_forest_class=6 0.25 1
-
-assign no_forest_penalty
-    switch equal env_forest 0 1.0
-    switch equal env_forest 1 forest_factor_mod
-    forest_factor_strong
-
-assign river_factor_mod
-    switch estimated_river_class= 1.0 switch estimated_river_class=1 1.05 switch estimated_river_class=2 1.0
-    switch estimated_river_class=3 0.95 switch estimated_river_class=4 0.85 switch estimated_river_class=5 0.75
-    switch estimated_river_class=6 0.65 1
-
-assign river_factor_strong
-    switch estimated_river_class= 1.0 switch estimated_river_class=1 1.15 switch estimated_river_class=2 1.0
-    switch estimated_river_class=3 0.85 switch estimated_river_class=4 0.65 switch estimated_river_class=5 0.50
-    switch estimated_river_class=6 0.35 1
-
-assign no_river_penalty
-    switch equal env_river 0 1.0
-    switch equal env_river 1 river_factor_mod
-    river_factor_strong
 
 assign town_factor_mod
     switch estimated_town_class= 1.0 switch estimated_town_class=1 1.2 switch estimated_town_class=2 1.5
@@ -309,28 +277,90 @@ assign no_noise_penalty
     switch equal avoid_noise 1 noise_factor_mod
     noise_factor_strong
 
+# Tamed Scenic Rewards
+assign forest_factor_mod
+    switch estimated_forest_class= 1.0 switch estimated_forest_class=1 0.95 switch estimated_forest_class=2 0.90
+    switch estimated_forest_class=3 0.85 switch estimated_forest_class=4 0.80 switch estimated_forest_class=5 0.75
+    switch estimated_forest_class=6 0.70 1.0
+
+assign forest_factor_strong
+    switch estimated_forest_class= 1.0 switch estimated_forest_class=1 0.90 switch estimated_forest_class=2 0.80
+    switch estimated_forest_class=3 0.70 switch estimated_forest_class=4 0.60 switch estimated_forest_class=5 0.55
+    switch estimated_forest_class=6 0.50 1.0
+
+assign no_forest_penalty
+    switch equal env_forest 0 1.0
+    switch equal env_forest 1 forest_factor_mod
+    forest_factor_strong
+
+assign river_factor_mod
+    switch estimated_river_class= 1.0 switch estimated_river_class=1 1.05 switch estimated_river_class=2 1.00
+    switch estimated_river_class=3 0.95 switch estimated_river_class=4 0.90 switch estimated_river_class=5 0.85
+    switch estimated_river_class=6 0.80 1.0
+
+assign river_factor_strong
+    switch estimated_river_class= 1.0 switch estimated_river_class=1 1.10 switch estimated_river_class=2 1.00
+    switch estimated_river_class=3 0.90 switch estimated_river_class=4 0.85 switch estimated_river_class=5 0.75
+    switch estimated_river_class=6 0.70 1.0
+
+assign no_river_penalty
+    switch equal env_river 0 1.0
+    switch equal env_river 1 river_factor_mod
+    river_factor_strong
+
+# ============================================================
+# PENALTY CATEGORIZATION (ANTI-COMPOUNDING ENGINE)
+# ============================================================
+
+# 1. Scenic Rewards (Multiplicative with a hard floor of 0.4)
+assign scenic_reward_multiplier 
+    max 0.4 ( multiply no_forest_penalty no_river_penalty )
+
+# 2. Environmental Stressors (Additive Penalties)
+assign traffic_extra max 0.0 sub actual_traffic_penalty 1.0
+assign noise_extra   max 0.0 sub no_noise_penalty 1.0
+assign town_extra    max 0.0 sub no_town_penalty 1.0
+
+assign environment_stress_multiplier
+    add 1.0 
+    add traffic_extra 
+    add noise_extra town_extra
+
+# 3. Surface & Physical Reality (Max logic for constraints)
+assign surface_physics_multiplier
+    max surface_preference_multiplier
+    max wet_surface_multiplier
+    max smoothnesspenalty
+    max tracktypepenalty
+        1.0
+
+# 4. Route Flow & Preferences (Max logic for flow)
+assign route_preference_multiplier
+    max notcycleroutepenalty
+    max notcyclewaypenalty
+    max maxspeedpenalty
+        1.0
+
 # ============================================================
 # FINAL COST FACTOR
 # ============================================================
 assign costfactor
-    multiply notcycleroutepenalty 
-    multiply notcyclewaypenalty
-    multiply surface_preference_multiplier
-    multiply wet_surface_multiplier
-    multiply actual_traffic_penalty
-    multiply no_forest_penalty
-    multiply no_river_penalty
-    multiply no_town_penalty
-    multiply no_noise_penalty
+    
+    # 1. Apply our categorized multipliers
+    multiply scenic_reward_multiplier
+    multiply environment_stress_multiplier
+    multiply surface_physics_multiplier
+    multiply route_preference_multiplier
+    
+    # 2. Hard Rules & Access (Must Compound)
     multiply onewaypenalty 
-    multiply smoothnesspenalty
     multiply hikingpenalty 
     multiply mtbpenalty
     multiply switch bicycle=use_sidepath 1.6 1
     multiply switch nobikeaccess 6 1
     multiply switch informal=yes switch prefer_unpaved_paths 1.0 1.2 1
-    multiply tracktypepenalty
-    multiply maxspeedpenalty
+    
+    # 3. Base Highway Costs
     switch or highway=motorway|motorway_link motorroad=yes 10000
     switch and nobikeaccess nofootaccess 10000
     switch highway= switch not route=ferry 10000 2
